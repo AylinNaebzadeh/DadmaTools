@@ -1,14 +1,14 @@
 
 import pickle
-from .kenlm_wrapper import Kelm_Wrapper
-from .OneShotTransformer import OneShotTransformer
-from .VerbHandler import VerbHandler
-import kenlm
-from .tokenizer import InformalTokenizer
-
+from kenlm_wrapper import Kelm_Wrapper
+from OneShotTransformer import OneShotTransformer
+from VerbHandler import VerbHandler
+# import kenlm
+from tokenizer import InformalTokenizer
+from huggingface_wrapper import HF_LanguageModel
 
 class FormalityTransformer:
-    def __init__(self, asset_file_addr, verbs_csv_addr, irregular_verbs_mapper_addr, lm_addr ):
+    def __init__(self, asset_file_addr, verbs_csv_addr, irregular_verbs_mapper_addr, lm_model ):
         assets = pickle.load(open(asset_file_addr, 'rb'))
         self.vocab = assets['vocab']
         self.word_ends_tanvin = assets['word_ends_tanvin']
@@ -26,7 +26,9 @@ class FormalityTransformer:
                                                       postfix_mapper=self.postfix_mapper,
                                                       isolated_words=self.isolated_words,
                                                       non_hidden_h_words=self.non_hidden_h_words)
-        lm_model = kenlm.Model(lm_addr)
+        # lm_model = kenlm.Model(lm_addr)
+        # lm_model = HF_LanguageModel("gpt2")  # or another small model
+        print("-------------------Before Kelm Wrapper---------------------------")
         self.lm_obj = Kelm_Wrapper(lm_model)
 
 

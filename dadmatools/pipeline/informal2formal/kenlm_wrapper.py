@@ -1,14 +1,17 @@
 
 class Kelm_Wrapper:
     def __init__(self, model):
+        print("********************** IN INIT *************************")
         self.model = model
     def get_best_candidate_word(self, default_phrases, candidate_phrases, index):
+        print("********************** IN GET_BEST_CANDIDATE_WORD *************************")
         candidate_texts = [' '.join(default_phrases[:index]) + ' ' + cnd + ' ' + ' '.join(default_phrases[index+1:]) for cnd in candidate_phrases]
         scores = list(map(self.model.score, candidate_texts))
         return scores.index(max(scores))
 
 
     def get_best_ongram_phrases(self, candidates_list):
+        print("********************** IN GET_BEST_ONGRAM_PHRASES *************************")
         bests = []
         for candidate_phrase in candidates_list:
             scores = list(map(self.model.score, candidate_phrase))
@@ -18,6 +21,7 @@ class Kelm_Wrapper:
 
 
     def get_best(self, candidates_list):
+        print("********************** IN GET_BEST *************************")
         bests = []
         default_phrases = self.get_best_ongram_phrases(candidates_list)
         # print(default_phrases)

@@ -1,7 +1,7 @@
 import re
 import itertools
 import string
-import dadmatools.pipeline.informal2formal.utils as utils
+from utils import *
 
 
 class InformalWord:
@@ -382,7 +382,7 @@ class OneShotTransformer:
 
     def get_expand(self, iword):
         all_possible_words = []
-        for subset_operators in utils.powerset(self.operators):
+        for subset_operators in powerset(self.operators):
             new_iword = InformalWord(lemma=iword.lemma, prefixs=iword.prefixs, postfixs=iword.postfixs, pos=iword.pos)
             for so in subset_operators:
                 so_resp = so(new_iword)
@@ -559,7 +559,7 @@ class OneShotTransformer:
     def transform(self, word, pos, ignore_nim_fasele=False):
         """ignore emoji , punctuation, numbers"""
         ignore_chars = '.1234567890!@#$%^&*()_+۱۲۳۴۵۶۷۸۹÷؟×−+?><}،,{":' + string.ascii_lowercase + string.ascii_uppercase
-        if any(ic in word for ic in ignore_chars) or utils.if_emoji(word):
+        if any(ic in word for ic in ignore_chars) or if_emoji(word):
             return [(word, word)]
         """handle nim fasele"""
         nim_fasele = '‌'

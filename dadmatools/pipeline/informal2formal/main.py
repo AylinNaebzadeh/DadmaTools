@@ -2,10 +2,11 @@ import itertools
 import os
 from pathlib import Path
 import yaml
-from .download_utils import download_dataset
-import dadmatools.pipeline.informal2formal.utils as utils
-from .formality_transformer import FormalityTransformer
+from download_utils import download_dataset
+from utils import *
+from formality_transformer import FormalityTransformer
 from dadmatools.pipeline.persian_tokenization.tokenizer import SentenceTokenizer
+from huggingface_wrapper import HF_LanguageModel
 
 FILE_URLS = [
     'https://huggingface.co/datasets/Dadmatech/informal2formal/resolve/main/3gram.bin',
@@ -16,7 +17,7 @@ FILE_URLS = [
 
 def translate_short_sent(model, sent):
     out_dict = {}
-    txt = utils.cleanify(sent)
+    txt = cleanify(sent)
     is_valid = lambda w: model.oneshot_transformer.transform(w, None)
     cnd_tokens = model.informal_tokenizer.tokenize(txt, is_valid)
     for tokens in cnd_tokens:
@@ -56,7 +57,7 @@ def translate_short_sent(model, sent):
         for id, cnd in enumerate(all_combinations_list):
             normal_seq = ' '.join([c[0] for c in cnd])
             lemma_seq = ' '.join([c[1] for c in cnd])
-            lemma_seq = utils.clean_text_for_lm(lemma_seq)
+            lemma_seq = clean_text_for_lm(lemma_seq)
             out_dict[id] = (normal_seq, lemma_seq)
         candidates = [[item[0] for item in candidate_phrases] for candidate_phrases in candidates]
         return model.lm_obj.get_best(candidates)
@@ -77,21 +78,54 @@ def load_config(config_file):
     return config
 
 
+# class Informal2Formal:
+#     def __init__(self, cache_dir: str = 'cache') -> None:
+#         # download or load files
+
+#         download_dataset(FILE_URLS, cache_dir, filename=None)
+
+#         # set assets files address
+#         verbs_csv_addr = os.path.join(cache_dir, 'verbs.csv')
+#         irregular_verbs_mapper = os.path.join(cache_dir, 'irregular_verb_mapper.csv')
+#         # lm_addr = os.path.join(cache_dir, '3gram.bin')
+#         assets_file_addr = os.path.join(cache_dir, 'assets.pkl')
+#         self.sentence_tokenizer = SentenceTokenizer('cache/dadmatools')
+#         self.model = FormalityTransformer(asset_file_addr=assets_file_addr,
+#                                           irregular_verbs_mapper_addr=irregular_verbs_mapper,
+#                                           verbs_csv_addr=verbs_csv_addr, lm_addr=lm_addr)
+
+#     def translate(self, txt):
+#         return translate(self.model, self.sentence_tokenizer, txt)
+    
 class Informal2Formal:
     def __init__(self, cache_dir: str = 'cache') -> None:
-        # download or load files
-
-        download_dataset(FILE_URLS, cache_dir, filename=None)
+        # download or load files (except KenLM model)
+        download_dataset(FILE_URLS, cache_dir, filename=[
+            '3gram.bin',
+            'assets.pkl',
+            'irregular_verb_mapper.csv',
+            'verbs.csv'
+        ])
 
         # set assets files address
         verbs_csv_addr = os.path.join(cache_dir, 'verbs.csv')
         irregular_verbs_mapper = os.path.join(cache_dir, 'irregular_verb_mapper.csv')
-        lm_addr = os.path.join(cache_dir, '3gram.bin')
         assets_file_addr = os.path.join(cache_dir, 'assets.pkl')
+
+        # Replace KenLM with Hugging Face LM
+        lm_model = HF_LanguageModel("HooshvareLab/gpt2-fa")  # Persian GPT-2
+
         self.sentence_tokenizer = SentenceTokenizer('cache/dadmatools')
         self.model = FormalityTransformer(asset_file_addr=assets_file_addr,
                                           irregular_verbs_mapper_addr=irregular_verbs_mapper,
-                                          verbs_csv_addr=verbs_csv_addr, lm_addr=lm_addr)
+                                          verbs_csv_addr=verbs_csv_addr,
+                                          lm_model=lm_model)  # pass object instead of file path
 
     def translate(self, txt):
         return translate(self.model, self.sentence_tokenizer, txt)
+
+
+if __name__ == '__main__':
+    translator = Informal2Formal()
+
+    print(translator.translate('چرا چرت و پرت میگی... من که نمیفهمم چی میگی خدایی'))
